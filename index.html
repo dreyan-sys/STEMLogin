@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+</head>
+<body>
+    <h1>Welcome to the File Upload System</h1>
+
+    <div id="authLinks">
+        <a href="login.html" id="loginLink">Login</a>
+        <a href="uploads.html" id="uploadLink" style="display: none;">Go to Uploads</a>
+        <button id="logoutBtn" style="display: none;">Logout</button>
+    </div>
+
+    <script>
+        async function checkLoginStatus() {
+            const response = await fetch("/status");
+            const result = await response.json();
+            if (result.loggedIn) {
+                document.getElementById("loginLink").style.display = "none";
+                document.getElementById("uploadLink").style.display = "inline";
+                document.getElementById("logoutBtn").style.display = "inline";
+            } else {
+                document.getElementById("loginLink").style.display = "inline";
+                document.getElementById("uploadLink").style.display = "none";
+                document.getElementById("logoutBtn").style.display = "none";
+            }
+        }
+
+        document.getElementById("logoutBtn").addEventListener("click", async () => {
+            await fetch("/logout", { method: "POST" });
+            checkLoginStatus();
+        });
+
+        checkLoginStatus();
+    </script>
+</body>
+</html>

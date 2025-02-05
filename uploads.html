@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>Upload a File</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" name="file" required>
+        <button type="submit">Upload</button>
+    </form>
+    <p id="message"></p>
+
+    <h2>Uploaded Files</h2>
+    <ul id="fileList"></ul>
+
+    <script>
+        document.getElementById("uploadForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const fileInput = document.getElementById("fileInput");
+            const message = document.getElementById("message");
+
+            if (!fileInput.files.length) {
+                message.textContent = "Please select a file!";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    message.textContent = "File uploaded successfully!";
+                    loadFiles(); // Refresh the file list
+                } else {
+                    message.textContent = "Upload failed!";
+                }
+            } catch (error) {
+                message.textContent = "Error uploading file!";
+            }
+        });
+
+        async function loadFiles() {
+            const fileList = document.getElementById("fileList");
+            fileList.innerHTML = ""; // Clear previous list
+
+            try {
+                const response = await fetch("/files");
+                const files = await response.json();
+
+                files.forEach(file => {
+                    const li = document.createElement("li");
+
+                    // File Download Link
+                    const link = document.createElement("a");
+                    link.href = file.path;
+                    link.textContent = file.filename;
+                    link.target = "_blank";
+
+                    // Upload Date
+                    const dateSpan = document.createElement("span");
+                    dateSpan.textContent = ` (Uploaded on: ${file.date})`;
+                    dateSpan.style.marginLeft = "10px";
+
+                    // Delete Button
+                    const deleteButton = document.createElement("button");
+                    deleteButton.textContent = "Delete";
+                    deleteButton.style.marginLeft = "10px";
+                    deleteButton.onclick = async () => {
+                        if (confirm(`Are you sure you want to delete ${file.filename}?`)) {
+                            await deleteFile(file.filename);
+                        }
+                    };
+
+                    li.appendChild(link);
+                    li.appendChild(dateSpan);
+                    li.appendChild(deleteButton);
+                    fileList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error loading files:", error);
+            }
+        }
+
+        async function deleteFile(filename) {
+            try {
+                const response = await fetch(`/delete/${filename}`, { method: "DELETE" });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert("File deleted successfully!");
+                    loadFiles(); // Refresh file list
+                } else {
+                    alert("Error deleting file!");
+                }
+            } catch (error) {
+                alert("Error deleting file!");
+            }
+        }
+
+        // Load files on page load
+        loadFiles();
+    </script>
+</body>
+</html>
